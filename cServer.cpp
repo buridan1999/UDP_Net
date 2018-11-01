@@ -151,7 +151,7 @@ int cServer::init(DWORD timeout)
 	/// Step 2
 
 	*(short *)(&bindingReq[0]) = htons(0x0001);      // stun_method
-	*(short *)(&bindingReq[2]) = htons(0x0000);      // msg_length
+	*(short *)(&bindingReq[2]) = htons(0x0002);      // msg_length
 	*(int *)(&bindingReq[4]) = htonl(0x2112A442);  // magic cookie
 	*(int *)(&bindingReq[8]) = htonl(0x63c7117e);  // transacation ID
 	*(int *)(&bindingReq[12]) = htonl(0x0714278f);
@@ -187,7 +187,7 @@ int cServer::init(DWORD timeout)
 	/// Step 3
 
 	*(short *)(&bindingReq[0]) = htons(0x0001);      // stun_method
-	*(short *)(&bindingReq[2]) = htons(0x0000);      // msg_length
+	*(short *)(&bindingReq[2]) = htons(0x0002);      // msg_length
 	*(int *)(&bindingReq[4]) = htonl(0x2112A442);  // magic cookie
 	*(int *)(&bindingReq[8]) = htonl(0x63c7117e);  // transacation ID
 	*(int *)(&bindingReq[12]) = htonl(0x0714278f);
