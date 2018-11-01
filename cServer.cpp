@@ -82,8 +82,11 @@ int cServer::init(DWORD timeout)
 		return -3;
 	}
 
+
+	/// Step 1
+
 	//## first bind
-	unsigned char bindingReq[20];
+	unsigned char bindingReq[64];
 	*(short *)(&bindingReq[0]) = htons(0x0001);      // stun_method
 	*(short *)(&bindingReq[2]) = htons(0x0000);      // msg_length
 	*(int *)(&bindingReq[4]) = htonl(0x2112A442);  // magic cookie
@@ -93,7 +96,7 @@ int cServer::init(DWORD timeout)
 
 	//printf("%s", servaddr.sin_addr);
 
-	n = sendto(socket_id, (const char*)bindingReq, sizeof(bindingReq), 0, (struct sockaddr*)&server_adr, sizeof(server_adr));
+	n = sendto(socket_id, (const char*)bindingReq, 20, 0, (struct sockaddr*)&server_adr, sizeof(server_adr));
 	if (n == -1)
 	{
 		printf("Couldn't sendto\n");
@@ -104,38 +107,118 @@ int cServer::init(DWORD timeout)
 		printf("\nWaiting for answear!");
 	}
 
-	n = recvfrom(socket_id, (char*)buf, MAXLINE, 0, NULL, 0);
-	if (n == -1)
+	//recv()
+	//n = recvfrom(socket_id, (char*)buf, MAXLINE, 0, NULL, 0);
+	n = recv(socket_id, (char*)buf, MAXLINE, 0);
+	if (n != -1)
 	{
-		printf("\nCouldn't recvfrom! Timeout!");
-		return -5;
-	}
-
-	if (*(short *)(&buf[0]) == htons(0x0101))
-	{
-		// parse XOR
-		i = 20;
-		while (i < sizeof(buf))
+		if (*(short *)(&buf[0]) == htons(0x0101))
 		{
-			attr_type = htons(*(short *)(&buf[i]));
-			attr_length = htons(*(short *)(&buf[i + 2]));
-			if (attr_type == 0x0001)
+			// parse XOR
+			i = 20;
+			while (i < sizeof(buf))
 			{
-				// parse : port, IP 
+				attr_type = htons(*(short *)(&buf[i]));
+				attr_length = htons(*(short *)(&buf[i + 2]));
+				if (attr_type == 0x0001)
+				{
+					// parse : port, IP 
 
-				global_port = ntohs(*(short *)(&buf[i + 6]));
-				//g_port = port;
+					global_port = ntohs(*(short *)(&buf[i + 6]));
+					//g_port = port;
 
-				printf("%d.%d.%d.%d:%d", buf[i + 8], buf[i + 9], buf[i + 10], buf[i + 11], global_port);
-				//sprintf_s(return_ip_port, size_of_port_string, "%d.%d.%d.%d:%d", buf[i + 8], buf[i + 9], buf[i + 10], buf[i + 11], port);
+					printf("%d.%d.%d.%d:%d", buf[i + 8], buf[i + 9], buf[i + 10], buf[i + 11], global_port);
+					//sprintf_s(return_ip_port, size_of_port_string, "%d.%d.%d.%d:%d", buf[i + 8], buf[i + 9], buf[i + 10], buf[i + 11], port);
 
-				return 0;
-				break;
+					//return 0;
+					break;
+				}
+				i += (4 + attr_length);
 			}
-			i += (4 + attr_length);
+
 		}
 
+		
 	}
+	else
+	{
+		printf("\n [ STEP 1 ] Couldn't recvfrom! Timeout!");
+		//return -5;
+	}
+
+	
+
+	/// Step 2
+
+	*(short *)(&bindingReq[0]) = htons(0x0001);      // stun_method
+	*(short *)(&bindingReq[2]) = htons(0x0000);      // msg_length
+	*(int *)(&bindingReq[4]) = htonl(0x2112A442);  // magic cookie
+	*(int *)(&bindingReq[8]) = htonl(0x63c7117e);  // transacation ID
+	*(int *)(&bindingReq[12]) = htonl(0x0714278f);
+	*(int *)(&bindingReq[16]) = htonl(0x5ded3221);
+	*(short *)(&bindingReq[20]) = htonl(0x0003); // CHANGE_REQUEST
+
+	//printf("%s", servaddr.sin_addr);
+
+	n = sendto(socket_id, (const char*)bindingReq, 22, 0, (struct sockaddr*)&server_adr, sizeof(server_adr));
+	if (n == -1)
+	{
+		printf("Couldn't sendto\n");
+		return -4;
+	}
+	else
+	{
+		printf("\nWaiting for answear!");
+	}
+
+	//recv()
+	//n = recvfrom(socket_id, (char*)buf, MAXLINE, 0, NULL, 0);
+	n = recv(socket_id, (char*)buf, MAXLINE, 0);
+	if (n != -1)
+	{
+		
+	}
+	else
+	{
+		printf("\n [ STEP 2 ] Couldn't recvfrom step: CHANGE_REQUEST! Timeout!");
+		//return -5;
+	}
+
+	/// Step 3
+
+	*(short *)(&bindingReq[0]) = htons(0x0001);      // stun_method
+	*(short *)(&bindingReq[2]) = htons(0x0000);      // msg_length
+	*(int *)(&bindingReq[4]) = htonl(0x2112A442);  // magic cookie
+	*(int *)(&bindingReq[8]) = htonl(0x63c7117e);  // transacation ID
+	*(int *)(&bindingReq[12]) = htonl(0x0714278f);
+	*(int *)(&bindingReq[16]) = htonl(0x5ded3221);
+	*(short *)(&bindingReq[20]) = htonl(0x0005); //: CHANGE_ADDRESS
+	//printf("%s", servaddr.sin_addr);
+
+	n = sendto(socket_id, (const char*)bindingReq, 22, 0, (struct sockaddr*)&server_adr, sizeof(server_adr));
+	if (n == -1)
+	{
+		printf("Couldn't sendto\n");
+		return -4;
+	}
+	else
+	{
+		printf("\nWaiting for answear!");
+	}
+
+	//recv()
+	//n = recvfrom(socket_id, (char*)buf, MAXLINE, 0, NULL, 0);
+	n = recv(socket_id, (char*)buf, MAXLINE, 0);
+	if (n != -1)
+	{
+
+	}
+	else
+	{
+		printf("\n [ STEP 3 ] Couldn't recvfrom step: CHANGE_ADDRESS! Timeout!");
+		//return -5;
+	}
+
 
 	return 0;
 }
